@@ -1,34 +1,44 @@
-name: Build Rspack Termux
-on: workflow_dispatch
+name: rspack-android-arm64
+
+on:
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v6
-      
-      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Node (LTS)
+        uses: actions/setup-node@v6
+        with:
+          node-version: 25
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android
 
-      - uses: actions/setup-node@v6
+      - name: Install Android NDK
+        uses: nttld/setup-ndk@v1
         with:
-          node-version: 25
+          ndk-version: r29
 
-      - name: Install Dependencies
-        run: |
-          corepack enable
-          pnpm install
-
-      - name: Build Binding
-        run: |
-          cd packages/rspack
-          pnpm exec napi build --platform --release --target aarch64-linux-android --cargo-cwd ../../crates/node_binding
+      - name: Build Rspack binding
         env:
-          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          CARGO_TARGET_AARCH64_LINUX_ANDROID_LINKER: $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android35-clang
+        run: |
+          cd packages/binding
+          npm install
+          cargo build --release --target aarch64-linux-android
 
-      - uses: actions/upload-artifact@v6
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
         with:
-          name: rspack-android-binding
-          path: packages/rspack/*.node
-          
+          name: rspack.android-arm64.node
+          path: target/aarch64-linux-android/release/*.node
