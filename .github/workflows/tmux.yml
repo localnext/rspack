@@ -1,0 +1,34 @@
+name: Build Rspack Termux
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 25
+
+      - name: Install Dependencies
+        run: |
+          corepack enable
+          pnpm install
+
+      - name: Build Binding
+        run: |
+          cd packages/rspack
+          pnpm exec napi build --platform --release --target aarch64-linux-android --cargo-cwd ../../crates/node_binding
+        env:
+          ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
+
+      - uses: actions/upload-artifact@v6
+        with:
+          name: rspack-android-binding
+          path: packages/rspack/*.node
+          
