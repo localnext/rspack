@@ -16,12 +16,14 @@ jobs:
           node-version: 25
 
       - name: Install Dependencies
-        run: npm i
+        run: |
+          corepack enable
+          pnpm install
 
       - name: Build Binding
         run: |
           cd packages/rspack
-          npm-exec napi build --platform --release --target aarch64-linux-android --cargo-cwd ../../crates/node_binding
+          pnpm exec napi build --platform --release --target aarch64-linux-android --cargo-cwd ../../crates/node_binding
         env:
           ANDROID_NDK_HOME: ${{ env.ANDROID_NDK_HOME }}
 
